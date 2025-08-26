@@ -50,33 +50,19 @@ export async function runThunksInParallelQueue<T>(
   return results;
 }
 
-export function parsePlatformIndependentPath(iPath: string): string {
-  if (os.platform() === "win32") {
-    return path.normalize(iPath.replace(/^["'](.*)["']$/, "$1").trim());
-  } else {
-    return path.normalize(
-      iPath
-        .replace(/^["'](.*)["']$/, "$1")
-        .replace(/\\ /g, " ")
-        .trim()
-    );
-  }
+export function parsePlatformIndependentPath(inputPath: string): string {
+  const trimmed = inputPath.replace(/^["'](.*)["']$/, "$1").trim();
+  const normalized =
+    os.platform() === "win32" ? trimmed : trimmed.replace(/\\ /g, " ");
+  return path.normalize(normalized);
 }
 
 export function isCommandAvailable(command: string): boolean {
   try {
-    const platform = os.platform();
-    let result: ReturnType<typeof spawn.sync>;
-
-    if (platform === "win32") {
-      result = spawn.sync("where", [command], { stdio: "ignore" });
-    } else {
-      result = spawn.sync("which", [command], { stdio: "ignore" });
-    }
-
-    if (result.error) return false;
-    return true;
-  } catch (error) {
+    const platformCommand = os.platform() === "win32" ? "where" : "which";
+    const result = spawn.sync(platformCommand, [command], { stdio: "ignore" });
+    return !result.error;
+  } catch {
     return false;
   }
 }
